@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>シンプルオセロゲーム</title>
+  <style>
+    .board {
+      display: grid;
+      grid-template-columns: repeat(8, 50px);
+      grid-template-rows: repeat(8, 50px);
+      gap: 2px;
+      background-color: #007f00;
+      width: 408px;
+      height: 408px;
+      margin: 20px auto;
+    }
+    .cell {
+      background-color: #00cc00;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 30px;
+      cursor: pointer;
+    }
+    .black { color: black; }
+    .white { color: white; }
+  </style>
+</head>
+<body>
+  <h1>シンプルオセロゲーム</h1>
+  <div id="board" class="board"></div>
+  <div id="message"></div>
+  
+  <script>
+    const board = document.getElementById('board');
+    const message = document.getElementById('message');
+    let grid = new Array(8).fill(null).map(() => new Array(8).fill(null));
+    let currentPlayer = '●';
+    
+    function createBoard() {
+      for (let row = 0; row < 8; row++) {
+        for (let col = 0; col < 8; col++) {
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          cell.dataset.row = row;
+          cell.dataset.col = col;
+          cell.addEventListener('click', handleClick);
+          board.appendChild(cell);
+        }
+      }
+      grid[3][3] = grid[4][4] = '●';
+      grid[3][4] = grid[4][3] = '○';
+      updateBoard();
+    }
+    
+    function updateBoard() {
+      for (let row = 0; row < 8; row++) {
+        for (let col = 0; col < 8; col++) {
+          const cell = board.children[row * 8 + col];
+          cell.textContent = grid[row][col];
+          cell.classList.toggle('black', grid[row][col] === '●');
+          cell.classList.toggle('white', grid[row][col] === '○');
+        }
+      }
+    }
+    
+    function handleClick(e) {
+      const row = parseInt(e.target.dataset.row);
+      const col = parseInt(e.target.dataset.col);
+      if (isValidMove(row, col, currentPlayer)) {
+        grid[row][col] = currentPlayer;
+        flipPieces(row, col, currentPlayer);
+        currentPlayer = currentPlayer === '●' ? '○' : '●';
+        updateBoard();
+        if (!hasValidMove(currentPlayer)) {
+          currentPlayer = currentPlayer === '●' ? '○' : '●';
+          if (!hasValidMove(currentPlayer)) {
+            endGame();
+          }
+        }
+      }
+    }
+  
+    function isValidMove(row, col, player) {
+      if (grid[row][col] !== null) return false;
+      for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+          if (dx === 0 && dy === 0) continue;
+          if (canFlip(row, col, player, dx, dy)) return true;
+        }
+      }
+      return false;
+    }
+    
+    function canFlip(row, col, player, dx, dy) {
+      let x = row + dx;
+      let y = col + dy;
+      let count = 0;
+      while (x >= 0 && x < 8 && y >= 0 && y < 8) {
+        if (grid[x][y] === null) return false;
+        if (grid[x][y] === player) return count > 0;
+        count++;
+        x += dx;
+        y += dy;
+      }
+      return false;
+    }
+    
+    function flipPieces(row, col, player) {
+      for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+          if (dx === 0 && dy === 0) continue;
+          flip(row, col, player, dx, dy);
+        }
+      }
+    }
+    
+    function flip(row, col, player, dx, dy) {
+      const flipped = [];
+      let x = row + dx;
+      let y = col + dy;
+      while (x >= 0 && x < 8 && y >= 0 && y < 8) {
+        if (grid[x][y] === null) return;
+        if (grid[x][y] === player) {
+          for (const [flipRow, flipCol] of flipped) {
+            grid[flipRow][flipCol] = player;
+          }
+          return;
+        }
+        flipped.push([x, y]);
+        x += dx;
+        y += dy;
+      }
+    }
+    
+    function hasValidMove(player) {
+      for (let row = 0; row < 8; row++) {
+        for (let col = 0; col < 8; col++) {
+          if (isValidMove(row, col, player)) return true;
+        }
+      }
+      return false;
+    }
+    
+    function endGame() {
+      let blackCount = 0;
+      let whiteCount = 0;
+      for (let row = 0; row < 8; row++) {
+        for (let col = 0; col < 8; col++) {
+          if (grid[row][col] === '●') blackCount++;
+          if (grid[row][col] === '○') whiteCount++;
+        }
+      }
+      if (blackCount > whiteCount) {
+        message.textContent = '黒の勝ち！';
+      } else if (whiteCount > blackCount) {
+        message.textContent = '白の勝ち！';
+      } else {
+        message.textContent = '引き分け！';
+      }
+    }
+    
+    createBoard();
+  </script>
+</body>
+</html>
